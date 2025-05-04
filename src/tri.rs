@@ -17,7 +17,8 @@ use std::num::NonZero;
 pub struct TriSphere<Proj = proj::Default> {
     proj: Proj,
     b: NonZero<u32>,
-    c_base: u32,
+    c: u32,
+    base: BaseTriSphere
 }
 
 impl<Proj> TriSphere<Proj> {
@@ -38,7 +39,8 @@ impl<Proj> TriSphere<Proj> {
         Self {
             proj,
             b,
-            c_base: (c << 2) | base as u32,
+            c,
+            base,
         }
     }
 
@@ -50,13 +52,14 @@ impl<Proj> TriSphere<Proj> {
         TriSphere {
             proj,
             b: self.b,
-            c_base: self.c_base,
+            c: self.c,
+            base: self.base
         }
     }
 
     /// The base shape of this subdivided sphere.
     pub const fn base(&self) -> BaseTriSphere {
-        unsafe { std::mem::transmute((self.c_base & 0b11) as u8) }
+        self.base
     }
 
     /// The [`BaseTriProjector`] for this sphere.
@@ -73,7 +76,7 @@ impl<Proj> TriSphere<Proj> {
     /// The `c` parameter of the subdivision, as described
     /// [here](https://en.wikipedia.org/wiki/Geodesic_polyhedron#Notation).
     pub const fn c(&self) -> u32 {
-        self.c_base >> 2
+        self.c
     }
 
     /// The number of [`Face`]s each triangle on the base shape is subdivided into.
@@ -623,22 +626,22 @@ pub struct HalfEdge<Proj> {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub(crate) enum HalfEdgeDir {
     /// The +U direction.
-    Up = 0,
+    Up,
 
     /// The +V direction.
-    Vp = 1,
+    Vp,
 
     /// The -U/+V direction.
-    UnVp = 2,
+    UnVp,
 
     /// The -U direction.
-    Un = 3,
+    Un,
 
     /// The -V direction.
-    Vn = 4,
+    Vn,
 
     /// The +U/-V direction.
-    UpVn = 5,
+    UpVn,
 }
 
 impl<Proj> HalfEdge<Proj> {
@@ -970,12 +973,21 @@ impl<Proj: Eq + Clone + BaseTriProjector> crate::HalfEdge for HalfEdge<Proj> {
 }
 
 impl HalfEdgeDir {
+    const INDEX_MAP: [Self; 6] = [
+        Self::Up,
+        Self::Vp,
+        Self::UnVp,
+        Self::Un,
+        Self::Vn,
+        Self::UpVn
+    ];
+    
     /// Constructs a [`HalfEdgeDir`] from the given index.
     ///
     /// This corresponds to an angle of `index * 60` degrees.
     pub fn from_index(index: usize) -> Self {
         assert!(index < 6, "index out of bounds: {}", index);
-        unsafe { std::mem::transmute(index as u8) }
+        Self::INDEX_MAP[index]
     }
 
     /// Converts this direction into a vector representation.
@@ -988,7 +1000,7 @@ impl HalfEdgeDir {
     /// Rotates this [`HalfEdgeDir`] counter-clockwise by `amount * 60` degrees.
     pub fn rotate_ccw(self, amount: usize) -> Self {
         let index = (self as usize + amount) % 6;
-        unsafe { std::mem::transmute(index as u8) }
+        Self::INDEX_MAP[index]
     }
 }
 

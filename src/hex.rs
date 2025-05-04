@@ -51,7 +51,7 @@ impl<Proj> HexSphere<Proj> {
     }
 
     /// Replaces the projector of this sphere with the given one.
-    /// 
+    ///
     /// The resulting sphere will be topologically identical to this one, but the positions
     /// of the vertices will be changed according to the new projection.
     pub fn with_projector<NProj>(self, proj: NProj) -> HexSphere<NProj> {

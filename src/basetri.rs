@@ -8,16 +8,18 @@ use crate::math::vec;
 pub enum BaseTriSphere {
     /// A tessellation of the unit sphere constructed by projecting an icosahedron onto it.
     #[default]
-    Icosa = 0,
+    Icosa,
 
     /// A tessellation of the unit sphere constructed by projecting an octahedron onto it.
-    Octa = 1,
+    Octa,
 
     /// A tessellation of the unit sphere constructed by projecting a tetrahedron onto it.
-    Tetra = 2,
+    Tetra,
 }
 
 impl BaseTriSphere {
+    const INDEX_MAP: [BaseTriSphere; 3] = [ Self::Icosa, Self::Octa, Self::Tetra ];
+    
     /// The degree of the vertices in this base shape.
     pub const fn vertex_degree(self) -> usize {
         self.lookup::<5, 4, 3>() as usize
@@ -57,7 +59,11 @@ impl BaseTriSphere {
 
     /// Returns the constant value corresponding to this base shape.
     const fn lookup<const ICOSA: u8, const OCTA: u8, const TETRA: u8>(self) -> u8 {
-        ((((TETRA as u32) << 16) | ((OCTA as u32) << 8) | ICOSA as u32) >> (self as u32 * 8)) as u8
+        match self {
+            BaseTriSphere::Icosa => ICOSA,
+            BaseTriSphere::Octa => OCTA,
+            BaseTriSphere::Tetra => TETRA
+        }
     }
 
     /// Determines which face contains the given point on the unit sphere.
@@ -129,7 +135,7 @@ pub struct Face(pub(crate) u8);
 impl Face {
     /// Gets the [`BaseTriSphere`] this face belongs to.
     pub const fn sphere(self) -> BaseTriSphere {
-        unsafe { std::mem::transmute(self.0.saturating_sub(12) / 8) }
+        BaseTriSphere::INDEX_MAP[(self.0.saturating_sub(12) / 8) as usize]
     }
 
     /// Indicates whether this face [owns](OwnershipInfo) its second vertex.
@@ -221,7 +227,7 @@ pub struct Vertex(u8);
 impl Vertex {
     /// Gets the [`BaseTriSphere`] this vertex belongs to.
     pub const fn sphere(self) -> BaseTriSphere {
-        unsafe { std::mem::transmute(self.0.saturating_sub(6) / 6) }
+        BaseTriSphere::INDEX_MAP[(self.0.saturating_sub(6) / 6) as usize]
     }
 
     /// Gets the face which [owns](OwnershipInfo) this vertex.
