@@ -9,7 +9,7 @@ pub mod proj;
 pub mod tri;
 pub mod util;
 
-pub use basetri::BaseTriSphere;
+pub use basetri::base_tri_sphere::BaseTriSphere;
 pub use hex::HexSphere;
 pub use tri::TriSphere;
 

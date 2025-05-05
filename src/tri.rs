@@ -1,8 +1,8 @@
 //! Contains types related to [`TriSphere`].
-use crate::basetri::BaseTriSphere;
-use crate::basetri::Face as BaseFace;
-use crate::basetri::HalfEdge as BaseHalfEdge;
-use crate::basetri::Vertex as BaseVertex;
+use crate::basetri::base_tri_sphere::BaseTriSphere;
+use crate::basetri::face::Face as BaseFace;
+use crate::basetri::half_edge::HalfEdge as BaseHalfEdge;
+use crate::basetri::vertex::Vertex as BaseVertex;
 use crate::math::{mat, vec};
 use crate::prelude::*;
 use crate::proj::{self, BaseTriProjector, Projection};

@@ -1,7 +1,7 @@
 //! Contains types related to projections.
 use crate::basetri;
 #[expect(unused_imports)]
-use crate::basetri::BaseTriSphere;
+use basetri::base_tri_sphere::BaseTriSphere;
 use crate::math::{self, mat, vec};
 #[expect(unused_imports)]
 use crate::tri::TriSphere;
@@ -128,11 +128,11 @@ pub mod tri {
         ///     /            \
         /// [0, 0] --- U -- [1, 0]
         /// ```
-        fn inside(&self, edge: basetri::HalfEdge) -> Self::Triangle;
+        fn inside(&self, edge: basetri::half_edge::HalfEdge) -> Self::Triangle;
     }
 
     /// The default [`BaseTriProjector`] used when a projector is not explicitly specified.
-    /// 
+    ///
     /// Ideally, this would be defined as an
     /// [impl Trait](https://github.com/rust-lang/rust/issues/63063), but that is not yet supported
     /// in stable Rust.
@@ -173,7 +173,7 @@ pub mod gnomonic {
 
     impl BaseTriProjector for Gnomonic {
         type Triangle = Planar;
-        fn inside(&self, edge: basetri::HalfEdge) -> Planar {
+        fn inside(&self, edge: basetri::half_edge::HalfEdge) -> Planar {
             self.triangle([
                 edge.start().pos(),
                 edge.next().start().pos(),
@@ -273,7 +273,7 @@ pub mod fuller {
 
     impl BaseTriProjector for Fuller {
         type Triangle = Triangle;
-        fn inside(&self, edge: basetri::HalfEdge) -> Triangle {
+        fn inside(&self, edge: basetri::half_edge::HalfEdge) -> Triangle {
             self.triangle(
                 edge.sphere().edge_length(),
                 [
@@ -413,7 +413,7 @@ pub mod fuller {
 
     #[test]
     fn test_roundtrip() {
-        use crate::basetri::BaseTriSphere;
+        use crate::basetri::base_tri_sphere::BaseTriSphere;
         use crate::prelude::*;
         const N: usize = 100;
         for v in 0..N {
