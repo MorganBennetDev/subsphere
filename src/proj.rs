@@ -300,14 +300,14 @@ pub mod fuller {
             // Special handling for boundaries to improve accuracy and performance
             if v <= 0.0 {
                 debug_assert_eq!(v, 0.0);
-                if u <= 0.0 {
+                return if u <= 0.0 {
                     debug_assert_eq!(u, 0.0);
-                    return self.points[0];
+                    self.points[0]
                 } else {
-                    return vec::normalize(vec::add(
+                    vec::normalize(vec::add(
                         vec::mul(self.points[0], ((1.0 - u) * self.angle).sin()),
                         vec::mul(self.points[1], (u * self.angle).sin()),
-                    ));
+                    ))
                 }
             } else if u <= 0.0 {
                 debug_assert_eq!(u, 0.0);
