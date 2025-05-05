@@ -1239,7 +1239,7 @@ impl BaseRegion {
 
     /// The general type of this [`BaseRegion`].
     pub fn ty(&self) -> BaseRegionType {
-        unsafe { std::mem::transmute(self.0 & 0b11) }
+        BaseRegionType::INDEX_MAP[(self.0 & 0b11) as usize]
     }
 
     /// Assuming that this region is for an edge, gets the edge corresponding to this region. The
@@ -1267,16 +1267,17 @@ impl std::fmt::Debug for BaseRegion {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) enum BaseRegionType {
     /// Corresponds to the first edge of [`BaseRegion::owner`].
-    Edge0 = 0,
+    Edge0,
 
     /// Corresponds to the interior of [`BaseRegion::owner`].
-    Interior = 1,
+    Interior,
 
     /// Corresponds to the third edge of [`BaseRegion::owner`].
-    Edge2 = 3,
+    Edge2,
 }
 
 impl BaseRegionType {
+    const INDEX_MAP: [Self; 3] = [ Self::Edge0, Self::Interior, Self::Edge2 ];
     /// Indicates whether this region corresponds to an edge.
     pub fn is_edge(self) -> bool {
         self != Self::Interior
@@ -1293,14 +1294,14 @@ impl BaseTriSphere {
     pub(crate) fn next_region(self, mut region: BaseRegion) -> Option<BaseRegion> {
         if region.ty().is_edge() {
             region.0 += 1;
-            if (region.0 >> 2) >= self.last_face_inner() {
+            if region.owner().0 >= self.last_face_inner() {
                 return None;
             }
         } else if region.owner().owns_edge_2() {
             region.0 += 2;
         } else {
             region.0 += 3;
-            if (region.0 >> 2) >= self.last_face_inner() {
+            if region.owner().0 >= self.last_face_inner() {
                 return None;
             }
         }
