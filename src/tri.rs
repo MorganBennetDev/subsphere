@@ -1277,7 +1277,7 @@ pub(crate) enum BaseRegionType {
 }
 
 impl BaseRegionType {
-    const INDEX_MAP: [Self; 3] = [ Self::Edge0, Self::Interior, Self::Edge2 ];
+    const INDEX_MAP: [Self; 4] = [ Self::Edge0, Self::Interior, Self::Interior, Self::Edge2 ];
     /// Indicates whether this region corresponds to an edge.
     pub fn is_edge(self) -> bool {
         self != Self::Interior
