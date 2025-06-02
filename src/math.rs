@@ -82,6 +82,19 @@ pub(crate) mod vec {
             a[0] * b[1] - a[1] * b[0],
         ]
     }
+    
+    /// Computes the magnitude of a vector
+    #[inline]
+    pub const fn magnitude<const N: usize>(v: [f64; N]) -> f64 {
+        let mut res = 0.0;
+        let mut i = 0;
+        while i < N {
+            res += v[i] * v[i];
+            i += 1;
+        }
+        
+        res
+    }
 
     /// Normalizes a vector.
     #[inline]
@@ -126,5 +139,77 @@ pub(crate) mod mat {
     pub const fn adjoint_2(m: [[f64; 2]; 2]) -> [[f64; 2]; 2] {
         let [[a, b], [c, d]] = m;
         [[d, -b], [-c, a]]
+    }
+}
+
+pub(crate) mod slerp {
+    use std::f64;
+    
+    /// Map from S^2 to T_q(S^2). Inverse of exp_q(p)
+    /// Outputs a vector with magnitude equal to the angle between p and q in the direction from q to p tangent to S^2 at q.
+    fn sphere_ln(q: [f64; 3], p: [f64; 3]) -> [f64; 3] {
+        let r = super::vec::dot(p, q).acos();
+        
+        let k = if r == 0.0 {
+            1.0
+        } else {
+            r / r.sin()
+        };
+        
+        super::vec::mul(super::vec::add(p, super::vec::mul(q, -r.cos())), k)
+    }
+    
+    /// Map from T_q(S^2) to S^2. Preserves distance and direction
+    fn sphere_exp(q: [f64; 3], dp: [f64; 3]) -> [f64; 3] {
+        let r = super::vec::magnitude(dp);
+        
+        let k = if r == 0.0 {
+            1.0
+        } else {
+            r.sin() / r
+        };
+        
+        super::vec::add(super::vec::mul(q, r.cos()), super::vec::mul(dp, k))
+    }
+    
+    /// Performs weighted spherical linear interpolation on a set of `N` vectors all lying on the same sphere using the
+    /// local linear convergence algorithm (A1) described by Buss and Fillmore in [Spherical Averages and Applications
+    /// to Spherical Splines and Interpolation](https://mathweb.ucsd.edu/~sbuss/ResearchWeb/spheremean/paper.pdf).
+    /// I attempted to implement the quadratic convergence algorithm but was not able to do so in a way that led to
+    /// empirically better benchmarks. The authors acknowledge in the paper that the quadratic and linear convergence
+    /// algorithms will likely have similar runtimes for single precisions floats. However, if you can manage to improve the
+    /// performance of this routine, contributions are always welcome (particularly for this method as it is by far the most
+    /// expensive operation in the entire process).
+    pub fn slerp_n<const N: usize>(w: [f64; N], p: [[f64; 3]; N]) -> [f64; 3] { 
+        let total_weight = w.iter().cloned().reduce(|a, b| a + b);
+        debug_assert!(total_weight.is_some(), "Sum of weights must exist.");
+        debug_assert!((total_weight.unwrap() - 1.0) <= f64::EPSILON, "Sum of weights must be equal to 1.0.");
+        
+        let mut q = super::vec::normalize(
+            w.iter()
+                .zip(p.iter())
+                .map(|(w_i, p_i)| super::vec::mul(*p_i, *w_i))
+                .reduce(super::vec::add)
+                .unwrap()
+        );
+        
+        loop {
+            let u = w.iter()
+                .zip(p.iter())
+                .map(|(w_i, p_i)| super::vec::mul(sphere_ln(q, *p_i), *w_i))
+                .reduce(super::vec::add)
+                .unwrap();
+            
+            q = sphere_exp(q, u);
+            
+            if super::vec::magnitude(u) < 1.0e-6 {
+                return q;
+            }
+        }
+    }
+    
+    /// Shorthand for `slerp_n([w1, w2, w3], [p1, p2, p3])`.
+    pub fn slerp_3(w1: f64, p1: [f64; 3], w2: f64, p2: [f64; 3], w3: f64, p3: [f64; 3]) -> [f64; 3] {
+        slerp_n([w1, w2, w3], [p1, p2, p3])
     }
 }
